@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  vcel-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vcel-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - MODE=API
+      - NODE_ENV=production
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    networks:
+      - vcel-network
+
+  # Optional MQTT broker for IoT mode
+  mqtt-broker:
+    image: eclipse-mosquitto:2.0
+    container_name: vcel-mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mqtt/config:/mosquitto/config
+      - ./mqtt/data:/mosquitto/data
+      - ./mqtt/log:/mosquitto/log
+    networks:
+      - vcel-network
+    profiles:
+      - iot
+
+networks:
+  vcel-network:
+    driver: bridge
