@@ -5,14 +5,15 @@ import { DatabaseModule } from '@infra/database';
 import { MessagingModule } from '@infra/messaging';
 import { RestModule } from '@adapters/rest';
 import { NfcModule } from '@adapters/nfc';
-import { CredentialVerifierService } from '@core/credential-verifier.service';
-import { BlockchainListenerService } from '@core/blockchain-listener.service';
-import { EventProcessorService } from '@core/event-processor.service';
+import { CoreModule } from '@core/core.module';
 
 @Module({
   imports: [
     // Global configuration
     ConfigModule,
+
+    // Core services (global)
+    CoreModule,
 
     // Event emitter for internal events
     EventEmitterModule.forRoot({
@@ -29,12 +30,6 @@ import { EventProcessorService } from '@core/event-processor.service';
     ...(process.env.MODE === 'API' ? [RestModule] : []),
     ...(process.env.MODE === 'NFC' ? [NfcModule] : []),
     ...(process.env.MODE === 'IOT' ? [RestModule] : []),
-  ],
-  providers: [
-    // Core services (always available)
-    CredentialVerifierService,
-    BlockchainListenerService,
-    EventProcessorService,
   ],
 })
 export class AppModule {}

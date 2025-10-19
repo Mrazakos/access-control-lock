@@ -24,31 +24,86 @@ export class EventProcessorService {
   @OnEvent(BLOCKCHAIN_EVENTS.SIGNATURE_REVOKED)
   async handleSignatureRevoked(data: RevocationEventData) {
     try {
-      const { signatureHash, blockNumber, timestamp, source } = data;
+      const { signatureHash, blockNumber, timestamp, source, revokedBy, transactionHash } = data;
+
+      this.logger.log(`\n${'='.repeat(80)}`);
+      this.logger.log(`🔔 REVOCATION EVENT RECEIVED [${source.toUpperCase()}]`);
+      this.logger.log(`${'='.repeat(80)}`);
+      this.logger.log(`📋 Signature Hash:    ${signatureHash}`);
+      this.logger.log(`👤 Revoked By:        ${revokedBy}`);
+      this.logger.log(`🧱 Block Number:      ${blockNumber}`);
+      this.logger.log(`🔗 Transaction Hash:  ${transactionHash}`);
+      this.logger.log(`⏰ Timestamp:         ${timestamp.toISOString()}`);
+      this.logger.log(`${'='.repeat(80)}\n`);
 
       // Check if already cached to avoid duplicates
       const exists = await this.revokedSignatureRepository.isSignatureHashRevoked(signatureHash);
 
       if (exists) {
-        this.logger.debug(
-          `Signature ${signatureHash.substring(0, 10)}... already cached (source: ${source})`,
+        this.logger.warn(
+          `⚠️  Signature ${signatureHash.substring(0, 10)}... ALREADY IN DATABASE (skipping duplicate)`,
         );
         return;
       }
 
       // Save revocation to database (no lockId - single lock instance)
-      await this.revokedSignatureRepository.save({
-        id: signatureHash, // Use hash as primary key since we only monitor one lock
-        signatureHash,
-        blockNumber,
-        revokedAt: timestamp,
-      });
+      let savedSuccessfully = false;
+      try {
+        await this.revokedSignatureRepository.save({
+          id: signatureHash, // Use hash as primary key since we only monitor one lock
+          signatureHash,
+          blockNumber,
+          revokedAt: timestamp,
+        });
+        savedSuccessfully = true;
+      } catch (saveError) {
+        // Handle unique constraint violations gracefully (race condition between check and insert)
+        if (saveError.message && saveError.message.includes('UNIQUE constraint failed')) {
+          this.logger.warn(
+            `⚠️  Signature ${signatureHash.substring(0, 10)}... ALREADY EXISTS (race condition detected, skipping)`,
+          );
+          // Don't log success or query database - just return early
+          return;
+        }
+        // Re-throw other errors
+        throw saveError;
+      }
 
-      this.logger.log(
-        `✅ Signature revoked [${source}]: Hash: ${signatureHash.substring(0, 10)}...`,
-      );
+      // Only log if we actually saved successfully
+      if (savedSuccessfully) {
+        // Get current database stats
+        const totalRevoked = await this.revokedSignatureRepository.countAll();
+
+        this.logger.log(`✅ SAVED TO DATABASE!`);
+        this.logger.log(`📊 Total revocations in DB: ${totalRevoked}`);
+        this.logger.log(`🔹 Source: ${source}\n`);
+
+        // Log all revoked signatures currently in database
+        this.logger.log(`\n${'─'.repeat(80)}`);
+        this.logger.log(`📋 ALL REVOKED SIGNATURES IN DATABASE:`);
+        this.logger.log(`${'─'.repeat(80)}`);
+
+        const allRevoked = await this.revokedSignatureRepository.getAllRevocations();
+
+        if (allRevoked.length === 0) {
+          this.logger.log(`   (No revoked signatures in database)`);
+        } else {
+          allRevoked.forEach((revoked, index) => {
+            this.logger.log(`   ${index + 1}. Hash: ${revoked.signatureHash}`);
+            this.logger.log(`      Block: ${revoked.blockNumber}`);
+            this.logger.log(`      Revoked At: ${revoked.revokedAt.toISOString()}`);
+            this.logger.log(`      Created At: ${revoked.createdAt.toISOString()}`);
+            this.logger.log(``);
+          });
+        }
+
+        this.logger.log(`${'─'.repeat(80)}\n`);
+      }
     } catch (error) {
-      this.logger.error(`Failed to process SignatureRevoked event: ${error.message}`, error.stack);
+      this.logger.error(
+        `❌ Failed to process SignatureRevoked event: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -58,10 +113,23 @@ export class EventProcessorService {
   @OnEvent(BLOCKCHAIN_EVENTS.BATCH_SYNC_COMPLETE)
   async handleBatchSyncComplete(data: any) {
     try {
-      const { totalEvents, fromBlock, toBlock } = data;
+      const { totalEvents, fromBlock, toBlock, newRevocations } = data;
+
+      this.logger.log(`\n${'='.repeat(80)}`);
+      this.logger.log(`📊 BATCH SYNC COMPLETE`);
+      this.logger.log(`${'='.repeat(80)}`);
+      this.logger.log(`📦 Blocks scanned:     ${fromBlock} → ${toBlock}`);
+      this.logger.log(`🔍 Events found:       ${totalEvents}`);
+      this.logger.log(`✨ New revocations:    ${newRevocations || totalEvents}`);
+
+      // Get current database stats
+      const totalRevoked = await this.revokedSignatureRepository.countAll();
+      const totalEntries = await this.signatureEntryRepository.countAll();
+
       this.logger.log(
-        `📊 Batch sync complete: ${totalEvents} events processed (blocks ${fromBlock}-${toBlock})`,
+        `📊 Total in DB:        ${totalRevoked} revocations, ${totalEntries} entries`,
       );
+      this.logger.log(`${'='.repeat(80)}\n`);
     } catch (error) {
       this.logger.error(`Failed to process BatchSyncComplete event: ${error.message}`, error.stack);
     }
