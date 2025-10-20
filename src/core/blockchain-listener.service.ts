@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/commo
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ethers } from 'ethers';
 import { AccessControl, AccessControl__factory } from '../typechain-types';
+import { SyncStateRepository } from '@infra/database';
 
 /**
  * Events emitted by the blockchain listener
@@ -97,7 +98,10 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
     totalRevocations: 0,
   };
 
-  constructor(private eventEmitter: EventEmitter2) {}
+  constructor(
+    private eventEmitter: EventEmitter2,
+    private syncStateRepo: SyncStateRepository,
+  ) {}
 
   async onModuleInit() {
     if (process.env.MODE === 'API' || process.env.MODE === 'IOT' || process.env.MODE === 'NFC') {
@@ -175,7 +179,16 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
 
       // Get current block
       this.currentBlock = await this.provider.getBlockNumber();
-      this.lastSyncedBlock = this.networkConfig.startBlock;
+      // Load last synced block from DB if available; otherwise use configured startBlock
+      const persisted = await this.syncStateRepo.getOrCreate(
+        this.networkConfig.name,
+        this.networkConfig.contractAddress,
+        this.lockId,
+      );
+      this.lastSyncedBlock = Math.max(
+        persisted.lastSyncedBlock || 0,
+        this.networkConfig.startBlock,
+      );
 
       // Fetch lock information from blockchain
       await this.fetchLockInfo();
@@ -533,6 +546,9 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
         fromBlock: this.lastSyncedBlock - (currentBlock - this.lastSyncedBlock),
         toBlock: currentBlock,
         timestamp: new Date().toISOString(),
+        network: this.networkConfig.name,
+        contractAddress: this.networkConfig.contractAddress,
+        lockId: this.lockId,
       });
     } catch (error) {
       this.logger.error(`❌ Batch sync failed: ${error.message}`, error.stack);

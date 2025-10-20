@@ -4,7 +4,7 @@ import { BlockchainListenerService } from '@core/blockchain-listener.service';
 /**
  * Health check controller
  */
-@Controller('api/v1/health')
+@Controller('health')
 export class HealthController {
   constructor(private readonly blockchainListener: BlockchainListenerService) {}
 
