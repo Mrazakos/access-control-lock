@@ -186,7 +186,7 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
         this.lockId,
       );
       this.lastSyncedBlock = Math.max(
-        persisted.lastSyncedBlock || 0,
+        persisted.lastSyncedBlock,
         this.networkConfig.startBlock,
       );
 
