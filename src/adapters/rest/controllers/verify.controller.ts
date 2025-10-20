@@ -8,7 +8,7 @@ import { ethers } from 'ethers';
 /**
  * REST API controller for credential verification
  */
-@Controller('api/v1/verify')
+@Controller('verify')
 export class VerifyController {
   private readonly logger = new Logger(VerifyController.name);
 

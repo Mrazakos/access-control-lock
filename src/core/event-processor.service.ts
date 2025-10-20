@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { BLOCKCHAIN_EVENTS, RevocationEventData } from '@core/blockchain-listener.service';
-import { RevokedSignatureRepository, SignatureEntryRepository } from '@infra/database';
+import {
+  RevokedSignatureRepository,
+  SignatureEntryRepository,
+  SyncStateRepository,
+} from '@infra/database';
 import { ethers } from 'ethers';
 
 /**
@@ -15,6 +19,7 @@ export class EventProcessorService {
   constructor(
     private readonly revokedSignatureRepository: RevokedSignatureRepository,
     private readonly signatureEntryRepository: SignatureEntryRepository,
+    private readonly syncStateRepository: SyncStateRepository,
   ) {}
 
   /**
@@ -113,7 +118,8 @@ export class EventProcessorService {
   @OnEvent(BLOCKCHAIN_EVENTS.BATCH_SYNC_COMPLETE)
   async handleBatchSyncComplete(data: any) {
     try {
-      const { totalEvents, fromBlock, toBlock, newRevocations } = data;
+      const { totalEvents, fromBlock, toBlock, newRevocations, network, contractAddress, lockId } =
+        data;
 
       this.logger.log(`\n${'='.repeat(80)}`);
       this.logger.log(`📊 BATCH SYNC COMPLETE`);
@@ -125,6 +131,24 @@ export class EventProcessorService {
       // Get current database stats
       const totalRevoked = await this.revokedSignatureRepository.countAll();
       const totalEntries = await this.signatureEntryRepository.countAll();
+
+      // Persist the toBlock as lastSyncedBlock (batch sync already updated it in blockchain listener)
+      // This is a backup/confirmation that the state is persisted
+      if (network && contractAddress && lockId) {
+        try {
+          await this.syncStateRepository.updateLastSyncedBlock(
+            network,
+            contractAddress,
+            lockId,
+            toBlock,
+          );
+          this.logger.debug(`📌 Confirmed lastSyncedBlock at ${toBlock} (batch sync complete)`);
+        } catch (syncErr) {
+          this.logger.warn(
+            `Failed to update lastSyncedBlock in batch complete: ${syncErr.message}`,
+          );
+        }
+      }
 
       this.logger.log(
         `📊 Total in DB:        ${totalRevoked} revocations, ${totalEntries} entries`,
