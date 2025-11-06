@@ -40,9 +40,10 @@ async function bootstrap() {
 
     // Start HTTP server for API and IoT modes
     if (config.MODE === 'API' || config.MODE === 'IOT') {
-      await app.listen(config.PORT);
+      await app.listen(config.PORT, '0.0.0.0');
       logger.log(`🚀 Server running on http://localhost:${config.PORT}/api/v1`);
       logger.log(`📊 Health check: http://localhost:${config.PORT}/api/v1/health`);
+      logger.log(`🔑 Lock configuration: http://192.168.0.17:${config.PORT}/api/v1/config`);
     } else {
       // For NFC mode, just init the app without HTTP server
       await app.init();

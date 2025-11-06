@@ -1,22 +1,43 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RevokedSignatureEntity, SignatureEntryEntity, SyncStateEntity } from './entities';
-import { RevokedSignatureRepository } from './revoked-signature.repository';
+import {
+  RevokedCredentialEntity,
+  SignatureEntryEntity,
+  SyncStateEntity,
+  LockConfigEntity,
+} from './entities';
+import { RevokedCredentialRepository } from './revoked-credential.repository';
 import { SignatureEntryRepository } from './signature-entry.repository';
 import { SyncStateRepository } from './sync-state.repository';
+import { LockConfigRepository } from './lock-config.repository';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: process.env.DATABASE_PATH || './data/vcel.db',
-      entities: [RevokedSignatureEntity, SignatureEntryEntity, SyncStateEntity],
+      entities: [RevokedCredentialEntity, SignatureEntryEntity, SyncStateEntity, LockConfigEntity],
       synchronize: true,
       logging: process.env.NODE_ENV === 'development',
     }),
-    TypeOrmModule.forFeature([RevokedSignatureEntity, SignatureEntryEntity, SyncStateEntity]),
+    TypeOrmModule.forFeature([
+      RevokedCredentialEntity,
+      SignatureEntryEntity,
+      SyncStateEntity,
+      LockConfigEntity,
+    ]),
   ],
-  providers: [RevokedSignatureRepository, SignatureEntryRepository, SyncStateRepository],
-  exports: [RevokedSignatureRepository, SignatureEntryRepository, SyncStateRepository],
+  providers: [
+    RevokedCredentialRepository,
+    SignatureEntryRepository,
+    SyncStateRepository,
+    LockConfigRepository,
+  ],
+  exports: [
+    RevokedCredentialRepository,
+    SignatureEntryRepository,
+    SyncStateRepository,
+    LockConfigRepository,
+  ],
 })
 export class DatabaseModule {}
