@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { RevokedCredentialEntity } from './entities';
 
 /**
- * Repository for revoked signatures
+ * Repository for revoked credentials
  */
 @Injectable()
 export class RevokedCredentialRepository {
