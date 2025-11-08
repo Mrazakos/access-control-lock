@@ -68,6 +68,7 @@ export class CredentialVerifierService {
         verified: false,
         error: `Signature verification error: ${error.message}`,
       };
+      return result;
     }
   }
 
