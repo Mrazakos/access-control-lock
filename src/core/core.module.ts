@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { CredentialVerifierService } from './credential-verifier.service';
 import { BlockchainListenerService } from './blockchain-listener.service';
 import { EventProcessorService } from './event-processor.service';
+import { LockConfigService } from './lock-config.service';
 import { DatabaseModule } from '@infra/database';
 
 /**
@@ -11,7 +12,17 @@ import { DatabaseModule } from '@infra/database';
 @Global()
 @Module({
   imports: [DatabaseModule],
-  providers: [CredentialVerifierService, BlockchainListenerService, EventProcessorService],
-  exports: [CredentialVerifierService, BlockchainListenerService, EventProcessorService],
+  providers: [
+    CredentialVerifierService,
+    BlockchainListenerService,
+    EventProcessorService,
+    LockConfigService,
+  ],
+  exports: [
+    CredentialVerifierService,
+    BlockchainListenerService,
+    EventProcessorService,
+    LockConfigService,
+  ],
 })
 export class CoreModule {}

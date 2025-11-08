@@ -12,167 +12,262 @@ import type {
   PopulatedTransaction,
   Signer,
   utils,
-} from 'ethers';
-import type { FunctionFragment, Result, EventFragment } from '@ethersproject/abi';
-import type { Listener, Provider } from '@ethersproject/providers';
+} from "ethers";
+import type {
+  FunctionFragment,
+  Result,
+  EventFragment,
+} from "@ethersproject/abi";
+import type { Listener, Provider } from "@ethersproject/providers";
 import type {
   TypedEventFilter,
   TypedEvent,
   TypedListener,
   OnEvent,
   PromiseOrValue,
-} from '../common';
+} from "../common";
 
 export interface AccessControlInterface extends utils.Interface {
   functions: {
-    'MAX_PUBLIC_KEY_LENGTH()': FunctionFragment;
-    'MAX_REVOKED_SIGNATURES()': FunctionFragment;
-    'batchRevokeSignatures(uint256,string[])': FunctionFragment;
-    'emergencyTransferLockOwnership(uint256,address)': FunctionFragment;
-    'getLockInfo(uint256)': FunctionFragment;
-    'getLockOwner(uint256)': FunctionFragment;
-    'getPublicKey(uint256)': FunctionFragment;
-    'getRevokedSignatureCount(uint256)': FunctionFragment;
-    'getTotalLocks()': FunctionFragment;
-    'isSignatureRevoked(uint256,string)': FunctionFragment;
-    'lockExistsView(uint256)': FunctionFragment;
-    'locks(uint256)': FunctionFragment;
-    'owner()': FunctionFragment;
-    'pause()': FunctionFragment;
-    'paused()': FunctionFragment;
-    'registerLock(string)': FunctionFragment;
-    'renounceOwnership()': FunctionFragment;
-    'revokeSignature(uint256,string)': FunctionFragment;
-    'revokedSignatures(uint256,bytes32)': FunctionFragment;
-    'transferLockOwnership(uint256,address)': FunctionFragment;
-    'transferOwnership(address)': FunctionFragment;
-    'unpause()': FunctionFragment;
+    "MAX_REVOKED_CREDENTIALS()": FunctionFragment;
+    "emergencyTransferLockOwnership(uint256,address)": FunctionFragment;
+    "getLockInfo(uint256)": FunctionFragment;
+    "getLockOwner(uint256)": FunctionFragment;
+    "getRevokedSignatureCount(uint256)": FunctionFragment;
+    "getRevokedSignatures(uint256,bytes32[])": FunctionFragment;
+    "getSignerAddress(uint256)": FunctionFragment;
+    "getTotalLocks()": FunctionFragment;
+    "isCredentialRevoked(uint256,bytes32)": FunctionFragment;
+    "lockExistsView(uint256)": FunctionFragment;
+    "locks(uint256)": FunctionFragment;
+    "owner()": FunctionFragment;
+    "pause()": FunctionFragment;
+    "paused()": FunctionFragment;
+    "registerLock(address)": FunctionFragment;
+    "renounceOwnership()": FunctionFragment;
+    "revokeCredential(uint256,bytes32,bytes)": FunctionFragment;
+    "revokedCredentials(uint256,bytes32)": FunctionFragment;
+    "transferLockOwnership(uint256,bytes32,bytes,address)": FunctionFragment;
+    "transferOwnership(address)": FunctionFragment;
+    "unpause()": FunctionFragment;
+    "verifySignerAddress(uint256,address)": FunctionFragment;
   };
 
   getFunction(
     nameOrSignatureOrTopic:
-      | 'MAX_PUBLIC_KEY_LENGTH'
-      | 'MAX_REVOKED_SIGNATURES'
-      | 'batchRevokeSignatures'
-      | 'emergencyTransferLockOwnership'
-      | 'getLockInfo'
-      | 'getLockOwner'
-      | 'getPublicKey'
-      | 'getRevokedSignatureCount'
-      | 'getTotalLocks'
-      | 'isSignatureRevoked'
-      | 'lockExistsView'
-      | 'locks'
-      | 'owner'
-      | 'pause'
-      | 'paused'
-      | 'registerLock'
-      | 'renounceOwnership'
-      | 'revokeSignature'
-      | 'revokedSignatures'
-      | 'transferLockOwnership'
-      | 'transferOwnership'
-      | 'unpause',
+      | "MAX_REVOKED_CREDENTIALS"
+      | "emergencyTransferLockOwnership"
+      | "getLockInfo"
+      | "getLockOwner"
+      | "getRevokedSignatureCount"
+      | "getRevokedSignatures"
+      | "getSignerAddress"
+      | "getTotalLocks"
+      | "isCredentialRevoked"
+      | "lockExistsView"
+      | "locks"
+      | "owner"
+      | "pause"
+      | "paused"
+      | "registerLock"
+      | "renounceOwnership"
+      | "revokeCredential"
+      | "revokedCredentials"
+      | "transferLockOwnership"
+      | "transferOwnership"
+      | "unpause"
+      | "verifySignerAddress"
   ): FunctionFragment;
 
-  encodeFunctionData(functionFragment: 'MAX_PUBLIC_KEY_LENGTH', values?: undefined): string;
-  encodeFunctionData(functionFragment: 'MAX_REVOKED_SIGNATURES', values?: undefined): string;
   encodeFunctionData(
-    functionFragment: 'batchRevokeSignatures',
-    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<string>[]],
+    functionFragment: "MAX_REVOKED_CREDENTIALS",
+    values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'emergencyTransferLockOwnership',
-    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<string>],
+    functionFragment: "emergencyTransferLockOwnership",
+    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
-    functionFragment: 'getLockInfo',
-    values: [PromiseOrValue<BigNumberish>],
+    functionFragment: "getLockInfo",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: 'getLockOwner',
-    values: [PromiseOrValue<BigNumberish>],
+    functionFragment: "getLockOwner",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: 'getPublicKey',
-    values: [PromiseOrValue<BigNumberish>],
+    functionFragment: "getRevokedSignatureCount",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: 'getRevokedSignatureCount',
-    values: [PromiseOrValue<BigNumberish>],
-  ): string;
-  encodeFunctionData(functionFragment: 'getTotalLocks', values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: 'isSignatureRevoked',
-    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<string>],
+    functionFragment: "getRevokedSignatures",
+    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BytesLike>[]]
   ): string;
   encodeFunctionData(
-    functionFragment: 'lockExistsView',
-    values: [PromiseOrValue<BigNumberish>],
-  ): string;
-  encodeFunctionData(functionFragment: 'locks', values: [PromiseOrValue<BigNumberish>]): string;
-  encodeFunctionData(functionFragment: 'owner', values?: undefined): string;
-  encodeFunctionData(functionFragment: 'pause', values?: undefined): string;
-  encodeFunctionData(functionFragment: 'paused', values?: undefined): string;
-  encodeFunctionData(functionFragment: 'registerLock', values: [PromiseOrValue<string>]): string;
-  encodeFunctionData(functionFragment: 'renounceOwnership', values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: 'revokeSignature',
-    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<string>],
+    functionFragment: "getSignerAddress",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: 'revokedSignatures',
-    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BytesLike>],
+    functionFragment: "getTotalLocks",
+    values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'transferLockOwnership',
-    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<string>],
+    functionFragment: "isCredentialRevoked",
+    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BytesLike>]
   ): string;
   encodeFunctionData(
-    functionFragment: 'transferOwnership',
-    values: [PromiseOrValue<string>],
+    functionFragment: "lockExistsView",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
-  encodeFunctionData(functionFragment: 'unpause', values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "locks",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(functionFragment: "pause", values?: undefined): string;
+  encodeFunctionData(functionFragment: "paused", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "registerLock",
+    values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "renounceOwnership",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "revokeCredential",
+    values: [
+      PromiseOrValue<BigNumberish>,
+      PromiseOrValue<BytesLike>,
+      PromiseOrValue<BytesLike>
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "revokedCredentials",
+    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BytesLike>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferLockOwnership",
+    values: [
+      PromiseOrValue<BigNumberish>,
+      PromiseOrValue<BytesLike>,
+      PromiseOrValue<BytesLike>,
+      PromiseOrValue<string>
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferOwnership",
+    values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "verifySignerAddress",
+    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<string>]
+  ): string;
 
-  decodeFunctionResult(functionFragment: 'MAX_PUBLIC_KEY_LENGTH', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'MAX_REVOKED_SIGNATURES', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'batchRevokeSignatures', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'emergencyTransferLockOwnership', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'getLockInfo', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'getLockOwner', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'getPublicKey', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'getRevokedSignatureCount', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'getTotalLocks', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'isSignatureRevoked', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'lockExistsView', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'locks', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'owner', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'pause', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'paused', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'registerLock', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'renounceOwnership', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'revokeSignature', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'revokedSignatures', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'transferLockOwnership', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'unpause', data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "MAX_REVOKED_CREDENTIALS",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "emergencyTransferLockOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getLockInfo",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getLockOwner",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getRevokedSignatureCount",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getRevokedSignatures",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getSignerAddress",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getTotalLocks",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "isCredentialRevoked",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "lockExistsView",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "locks", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "registerLock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "renounceOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "revokeCredential",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "revokedCredentials",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferLockOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "verifySignerAddress",
+    data: BytesLike
+  ): Result;
 
   events: {
-    'LockOwnershipTransferred(uint256,address,address)': EventFragment;
-    'LockRegistered(uint256,address,string)': EventFragment;
-    'OwnershipTransferred(address,address)': EventFragment;
-    'Paused(address)': EventFragment;
-    'SignatureRevoked(uint256,bytes32,address)': EventFragment;
-    'Unpaused(address)': EventFragment;
+    "CredentialRevoked(uint256,bytes32,address)": EventFragment;
+    "LockOwnershipTransferred(uint256,address,address)": EventFragment;
+    "LockRegistered(uint256,address,address)": EventFragment;
+    "OwnershipTransferred(address,address)": EventFragment;
+    "Paused(address)": EventFragment;
+    "Unpaused(address)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: 'LockOwnershipTransferred'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'LockRegistered'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'OwnershipTransferred'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'Paused'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'SignatureRevoked'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'Unpaused'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "CredentialRevoked"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "LockOwnershipTransferred"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "LockRegistered"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Unpaused"): EventFragment;
 }
+
+export interface CredentialRevokedEventObject {
+  lockId: BigNumber;
+  vcHash: string;
+  owner: string;
+}
+export type CredentialRevokedEvent = TypedEvent<
+  [BigNumber, string, string],
+  CredentialRevokedEventObject
+>;
+
+export type CredentialRevokedEventFilter =
+  TypedEventFilter<CredentialRevokedEvent>;
 
 export interface LockOwnershipTransferredEventObject {
   lockId: BigNumber;
@@ -184,12 +279,13 @@ export type LockOwnershipTransferredEvent = TypedEvent<
   LockOwnershipTransferredEventObject
 >;
 
-export type LockOwnershipTransferredEventFilter = TypedEventFilter<LockOwnershipTransferredEvent>;
+export type LockOwnershipTransferredEventFilter =
+  TypedEventFilter<LockOwnershipTransferredEvent>;
 
 export interface LockRegisteredEventObject {
   lockId: BigNumber;
   owner: string;
-  publicKey: string;
+  signerAddress: string;
 }
 export type LockRegisteredEvent = TypedEvent<
   [BigNumber, string, string],
@@ -207,7 +303,8 @@ export type OwnershipTransferredEvent = TypedEvent<
   OwnershipTransferredEventObject
 >;
 
-export type OwnershipTransferredEventFilter = TypedEventFilter<OwnershipTransferredEvent>;
+export type OwnershipTransferredEventFilter =
+  TypedEventFilter<OwnershipTransferredEvent>;
 
 export interface PausedEventObject {
   account: string;
@@ -215,18 +312,6 @@ export interface PausedEventObject {
 export type PausedEvent = TypedEvent<[string], PausedEventObject>;
 
 export type PausedEventFilter = TypedEventFilter<PausedEvent>;
-
-export interface SignatureRevokedEventObject {
-  lockId: BigNumber;
-  signatureHash: string;
-  owner: string;
-}
-export type SignatureRevokedEvent = TypedEvent<
-  [BigNumber, string, string],
-  SignatureRevokedEventObject
->;
-
-export type SignatureRevokedEventFilter = TypedEventFilter<SignatureRevokedEvent>;
 
 export interface UnpausedEventObject {
   account: string;
@@ -245,14 +330,16 @@ export interface AccessControl extends BaseContract {
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
     fromBlockOrBlockhash?: string | number | undefined,
-    toBlock?: string | number | undefined,
+    toBlock?: string | number | undefined
   ): Promise<Array<TEvent>>;
 
   listeners<TEvent extends TypedEvent>(
-    eventFilter?: TypedEventFilter<TEvent>,
+    eventFilter?: TypedEventFilter<TEvent>
   ): Array<TypedListener<TEvent>>;
   listeners(eventName?: string): Array<Listener>;
-  removeAllListeners<TEvent extends TypedEvent>(eventFilter: TypedEventFilter<TEvent>): this;
+  removeAllListeners<TEvent extends TypedEvent>(
+    eventFilter: TypedEventFilter<TEvent>
+  ): this;
   removeAllListeners(eventName?: string): this;
   off: OnEvent<this>;
   on: OnEvent<this>;
@@ -260,29 +347,21 @@ export interface AccessControl extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    MAX_PUBLIC_KEY_LENGTH(overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    MAX_REVOKED_SIGNATURES(overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    batchRevokeSignatures(
-      lockId: PromiseOrValue<BigNumberish>,
-      signatures: PromiseOrValue<string>[],
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
-    ): Promise<ContractTransaction>;
+    MAX_REVOKED_CREDENTIALS(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     emergencyTransferLockOwnership(
       lockId: PromiseOrValue<BigNumberish>,
       newOwner: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     getLockInfo(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<
       [string, string, BigNumber, boolean] & {
         owner: string;
-        publicKey: string;
+        signerAddress: string;
         revokedCount: BigNumber;
         exists: boolean;
       }
@@ -290,39 +369,45 @@ export interface AccessControl extends BaseContract {
 
     getLockOwner(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
-    ): Promise<[string]>;
-
-    getPublicKey(
-      lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<[string]>;
 
     getRevokedSignatureCount(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<[BigNumber]>;
+
+    getRevokedSignatures(
+      lockId: PromiseOrValue<BigNumberish>,
+      vcHashes: PromiseOrValue<BytesLike>[],
+      overrides?: CallOverrides
+    ): Promise<[boolean[]]>;
+
+    getSignerAddress(
+      lockId: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[string]>;
 
     getTotalLocks(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    isSignatureRevoked(
+    isCredentialRevoked(
       lockId: PromiseOrValue<BigNumberish>,
-      signature: PromiseOrValue<string>,
-      overrides?: CallOverrides,
+      vcHash: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
     ): Promise<[boolean]>;
 
     lockExistsView(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<[boolean]>;
 
     locks(
       arg0: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<
       [string, string, BigNumber, boolean] & {
         owner: string;
-        publicKey: string;
+        signerAddress: string;
         revokedCount: BigNumber;
         exists: boolean;
       }
@@ -330,101 +415,119 @@ export interface AccessControl extends BaseContract {
 
     owner(overrides?: CallOverrides): Promise<[string]>;
 
-    pause(overrides?: Overrides & { from?: PromiseOrValue<string> }): Promise<ContractTransaction>;
+    pause(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
 
     paused(overrides?: CallOverrides): Promise<[boolean]>;
 
     registerLock(
-      publicKey: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      signerAddress: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     renounceOwnership(
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    revokeSignature(
+    revokeCredential(
       lockId: PromiseOrValue<BigNumberish>,
-      signature: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      vcHash: PromiseOrValue<BytesLike>,
+      authSignature: PromiseOrValue<BytesLike>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    revokedSignatures(
+    revokedCredentials(
       arg0: PromiseOrValue<BigNumberish>,
       arg1: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<[boolean]>;
 
     transferLockOwnership(
       lockId: PromiseOrValue<BigNumberish>,
+      message: PromiseOrValue<BytesLike>,
+      authSignature: PromiseOrValue<BytesLike>,
       newOwner: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     transferOwnership(
       newOwner: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     unpause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
+
+    verifySignerAddress(
+      lockId: PromiseOrValue<BigNumberish>,
+      signerAddress: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
   };
 
-  MAX_PUBLIC_KEY_LENGTH(overrides?: CallOverrides): Promise<BigNumber>;
-
-  MAX_REVOKED_SIGNATURES(overrides?: CallOverrides): Promise<BigNumber>;
-
-  batchRevokeSignatures(
-    lockId: PromiseOrValue<BigNumberish>,
-    signatures: PromiseOrValue<string>[],
-    overrides?: Overrides & { from?: PromiseOrValue<string> },
-  ): Promise<ContractTransaction>;
+  MAX_REVOKED_CREDENTIALS(overrides?: CallOverrides): Promise<BigNumber>;
 
   emergencyTransferLockOwnership(
     lockId: PromiseOrValue<BigNumberish>,
     newOwner: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> },
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   getLockInfo(
     lockId: PromiseOrValue<BigNumberish>,
-    overrides?: CallOverrides,
+    overrides?: CallOverrides
   ): Promise<
     [string, string, BigNumber, boolean] & {
       owner: string;
-      publicKey: string;
+      signerAddress: string;
       revokedCount: BigNumber;
       exists: boolean;
     }
   >;
 
-  getLockOwner(lockId: PromiseOrValue<BigNumberish>, overrides?: CallOverrides): Promise<string>;
-
-  getPublicKey(lockId: PromiseOrValue<BigNumberish>, overrides?: CallOverrides): Promise<string>;
+  getLockOwner(
+    lockId: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<string>;
 
   getRevokedSignatureCount(
     lockId: PromiseOrValue<BigNumberish>,
-    overrides?: CallOverrides,
+    overrides?: CallOverrides
   ): Promise<BigNumber>;
+
+  getRevokedSignatures(
+    lockId: PromiseOrValue<BigNumberish>,
+    vcHashes: PromiseOrValue<BytesLike>[],
+    overrides?: CallOverrides
+  ): Promise<boolean[]>;
+
+  getSignerAddress(
+    lockId: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<string>;
 
   getTotalLocks(overrides?: CallOverrides): Promise<BigNumber>;
 
-  isSignatureRevoked(
+  isCredentialRevoked(
     lockId: PromiseOrValue<BigNumberish>,
-    signature: PromiseOrValue<string>,
-    overrides?: CallOverrides,
+    vcHash: PromiseOrValue<BytesLike>,
+    overrides?: CallOverrides
   ): Promise<boolean>;
 
-  lockExistsView(lockId: PromiseOrValue<BigNumberish>, overrides?: CallOverrides): Promise<boolean>;
+  lockExistsView(
+    lockId: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
 
   locks(
     arg0: PromiseOrValue<BigNumberish>,
-    overrides?: CallOverrides,
+    overrides?: CallOverrides
   ): Promise<
     [string, string, BigNumber, boolean] & {
       owner: string;
-      publicKey: string;
+      signerAddress: string;
       revokedCount: BigNumber;
       exists: boolean;
     }
@@ -432,102 +535,119 @@ export interface AccessControl extends BaseContract {
 
   owner(overrides?: CallOverrides): Promise<string>;
 
-  pause(overrides?: Overrides & { from?: PromiseOrValue<string> }): Promise<ContractTransaction>;
+  pause(
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
 
   paused(overrides?: CallOverrides): Promise<boolean>;
 
   registerLock(
-    publicKey: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> },
+    signerAddress: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   renounceOwnership(
-    overrides?: Overrides & { from?: PromiseOrValue<string> },
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  revokeSignature(
+  revokeCredential(
     lockId: PromiseOrValue<BigNumberish>,
-    signature: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> },
+    vcHash: PromiseOrValue<BytesLike>,
+    authSignature: PromiseOrValue<BytesLike>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  revokedSignatures(
+  revokedCredentials(
     arg0: PromiseOrValue<BigNumberish>,
     arg1: PromiseOrValue<BytesLike>,
-    overrides?: CallOverrides,
+    overrides?: CallOverrides
   ): Promise<boolean>;
 
   transferLockOwnership(
     lockId: PromiseOrValue<BigNumberish>,
+    message: PromiseOrValue<BytesLike>,
+    authSignature: PromiseOrValue<BytesLike>,
     newOwner: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> },
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   transferOwnership(
     newOwner: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> },
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  unpause(overrides?: Overrides & { from?: PromiseOrValue<string> }): Promise<ContractTransaction>;
+  unpause(
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  verifySignerAddress(
+    lockId: PromiseOrValue<BigNumberish>,
+    signerAddress: PromiseOrValue<string>,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
 
   callStatic: {
-    MAX_PUBLIC_KEY_LENGTH(overrides?: CallOverrides): Promise<BigNumber>;
-
-    MAX_REVOKED_SIGNATURES(overrides?: CallOverrides): Promise<BigNumber>;
-
-    batchRevokeSignatures(
-      lockId: PromiseOrValue<BigNumberish>,
-      signatures: PromiseOrValue<string>[],
-      overrides?: CallOverrides,
-    ): Promise<void>;
+    MAX_REVOKED_CREDENTIALS(overrides?: CallOverrides): Promise<BigNumber>;
 
     emergencyTransferLockOwnership(
       lockId: PromiseOrValue<BigNumberish>,
       newOwner: PromiseOrValue<string>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<void>;
 
     getLockInfo(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<
       [string, string, BigNumber, boolean] & {
         owner: string;
-        publicKey: string;
+        signerAddress: string;
         revokedCount: BigNumber;
         exists: boolean;
       }
     >;
 
-    getLockOwner(lockId: PromiseOrValue<BigNumberish>, overrides?: CallOverrides): Promise<string>;
-
-    getPublicKey(lockId: PromiseOrValue<BigNumberish>, overrides?: CallOverrides): Promise<string>;
+    getLockOwner(
+      lockId: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<string>;
 
     getRevokedSignatureCount(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    getRevokedSignatures(
+      lockId: PromiseOrValue<BigNumberish>,
+      vcHashes: PromiseOrValue<BytesLike>[],
+      overrides?: CallOverrides
+    ): Promise<boolean[]>;
+
+    getSignerAddress(
+      lockId: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<string>;
 
     getTotalLocks(overrides?: CallOverrides): Promise<BigNumber>;
 
-    isSignatureRevoked(
+    isCredentialRevoked(
       lockId: PromiseOrValue<BigNumberish>,
-      signature: PromiseOrValue<string>,
-      overrides?: CallOverrides,
+      vcHash: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
     ): Promise<boolean>;
 
     lockExistsView(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<boolean>;
 
     locks(
       arg0: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<
       [string, string, BigNumber, boolean] & {
         owner: string;
-        publicKey: string;
+        signerAddress: string;
         revokedCount: BigNumber;
         exists: boolean;
       }
@@ -539,271 +659,311 @@ export interface AccessControl extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<boolean>;
 
-    registerLock(publicKey: PromiseOrValue<string>, overrides?: CallOverrides): Promise<BigNumber>;
+    registerLock(
+      signerAddress: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
-    revokeSignature(
+    revokeCredential(
       lockId: PromiseOrValue<BigNumberish>,
-      signature: PromiseOrValue<string>,
-      overrides?: CallOverrides,
+      vcHash: PromiseOrValue<BytesLike>,
+      authSignature: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
     ): Promise<void>;
 
-    revokedSignatures(
+    revokedCredentials(
       arg0: PromiseOrValue<BigNumberish>,
       arg1: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<boolean>;
 
     transferLockOwnership(
       lockId: PromiseOrValue<BigNumberish>,
+      message: PromiseOrValue<BytesLike>,
+      authSignature: PromiseOrValue<BytesLike>,
       newOwner: PromiseOrValue<string>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<void>;
 
-    transferOwnership(newOwner: PromiseOrValue<string>, overrides?: CallOverrides): Promise<void>;
+    transferOwnership(
+      newOwner: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     unpause(overrides?: CallOverrides): Promise<void>;
+
+    verifySignerAddress(
+      lockId: PromiseOrValue<BigNumberish>,
+      signerAddress: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
   };
 
   filters: {
-    'LockOwnershipTransferred(uint256,address,address)'(
+    "CredentialRevoked(uint256,bytes32,address)"(
+      lockId?: PromiseOrValue<BigNumberish> | null,
+      vcHash?: PromiseOrValue<BytesLike> | null,
+      owner?: null
+    ): CredentialRevokedEventFilter;
+    CredentialRevoked(
+      lockId?: PromiseOrValue<BigNumberish> | null,
+      vcHash?: PromiseOrValue<BytesLike> | null,
+      owner?: null
+    ): CredentialRevokedEventFilter;
+
+    "LockOwnershipTransferred(uint256,address,address)"(
       lockId?: PromiseOrValue<BigNumberish> | null,
       previousOwner?: PromiseOrValue<string> | null,
-      newOwner?: PromiseOrValue<string> | null,
+      newOwner?: PromiseOrValue<string> | null
     ): LockOwnershipTransferredEventFilter;
     LockOwnershipTransferred(
       lockId?: PromiseOrValue<BigNumberish> | null,
       previousOwner?: PromiseOrValue<string> | null,
-      newOwner?: PromiseOrValue<string> | null,
+      newOwner?: PromiseOrValue<string> | null
     ): LockOwnershipTransferredEventFilter;
 
-    'LockRegistered(uint256,address,string)'(
+    "LockRegistered(uint256,address,address)"(
       lockId?: PromiseOrValue<BigNumberish> | null,
       owner?: PromiseOrValue<string> | null,
-      publicKey?: null,
+      signerAddress?: PromiseOrValue<string> | null
     ): LockRegisteredEventFilter;
     LockRegistered(
       lockId?: PromiseOrValue<BigNumberish> | null,
       owner?: PromiseOrValue<string> | null,
-      publicKey?: null,
+      signerAddress?: PromiseOrValue<string> | null
     ): LockRegisteredEventFilter;
 
-    'OwnershipTransferred(address,address)'(
+    "OwnershipTransferred(address,address)"(
       previousOwner?: PromiseOrValue<string> | null,
-      newOwner?: PromiseOrValue<string> | null,
+      newOwner?: PromiseOrValue<string> | null
     ): OwnershipTransferredEventFilter;
     OwnershipTransferred(
       previousOwner?: PromiseOrValue<string> | null,
-      newOwner?: PromiseOrValue<string> | null,
+      newOwner?: PromiseOrValue<string> | null
     ): OwnershipTransferredEventFilter;
 
-    'Paused(address)'(account?: null): PausedEventFilter;
+    "Paused(address)"(account?: null): PausedEventFilter;
     Paused(account?: null): PausedEventFilter;
 
-    'SignatureRevoked(uint256,bytes32,address)'(
-      lockId?: PromiseOrValue<BigNumberish> | null,
-      signatureHash?: PromiseOrValue<BytesLike> | null,
-      owner?: PromiseOrValue<string> | null,
-    ): SignatureRevokedEventFilter;
-    SignatureRevoked(
-      lockId?: PromiseOrValue<BigNumberish> | null,
-      signatureHash?: PromiseOrValue<BytesLike> | null,
-      owner?: PromiseOrValue<string> | null,
-    ): SignatureRevokedEventFilter;
-
-    'Unpaused(address)'(account?: null): UnpausedEventFilter;
+    "Unpaused(address)"(account?: null): UnpausedEventFilter;
     Unpaused(account?: null): UnpausedEventFilter;
   };
 
   estimateGas: {
-    MAX_PUBLIC_KEY_LENGTH(overrides?: CallOverrides): Promise<BigNumber>;
-
-    MAX_REVOKED_SIGNATURES(overrides?: CallOverrides): Promise<BigNumber>;
-
-    batchRevokeSignatures(
-      lockId: PromiseOrValue<BigNumberish>,
-      signatures: PromiseOrValue<string>[],
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
-    ): Promise<BigNumber>;
+    MAX_REVOKED_CREDENTIALS(overrides?: CallOverrides): Promise<BigNumber>;
 
     emergencyTransferLockOwnership(
       lockId: PromiseOrValue<BigNumberish>,
       newOwner: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     getLockInfo(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getLockOwner(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
-    ): Promise<BigNumber>;
-
-    getPublicKey(
-      lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getRevokedSignatureCount(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    getRevokedSignatures(
+      lockId: PromiseOrValue<BigNumberish>,
+      vcHashes: PromiseOrValue<BytesLike>[],
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    getSignerAddress(
+      lockId: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getTotalLocks(overrides?: CallOverrides): Promise<BigNumber>;
 
-    isSignatureRevoked(
+    isCredentialRevoked(
       lockId: PromiseOrValue<BigNumberish>,
-      signature: PromiseOrValue<string>,
-      overrides?: CallOverrides,
+      vcHash: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     lockExistsView(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    locks(arg0: PromiseOrValue<BigNumberish>, overrides?: CallOverrides): Promise<BigNumber>;
+    locks(
+      arg0: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
-    pause(overrides?: Overrides & { from?: PromiseOrValue<string> }): Promise<BigNumber>;
+    pause(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
 
     paused(overrides?: CallOverrides): Promise<BigNumber>;
 
     registerLock(
-      publicKey: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      signerAddress: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     renounceOwnership(
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    revokeSignature(
+    revokeCredential(
       lockId: PromiseOrValue<BigNumberish>,
-      signature: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      vcHash: PromiseOrValue<BytesLike>,
+      authSignature: PromiseOrValue<BytesLike>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    revokedSignatures(
+    revokedCredentials(
       arg0: PromiseOrValue<BigNumberish>,
       arg1: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     transferLockOwnership(
       lockId: PromiseOrValue<BigNumberish>,
+      message: PromiseOrValue<BytesLike>,
+      authSignature: PromiseOrValue<BytesLike>,
       newOwner: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     transferOwnership(
       newOwner: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    unpause(overrides?: Overrides & { from?: PromiseOrValue<string> }): Promise<BigNumber>;
+    unpause(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    verifySignerAddress(
+      lockId: PromiseOrValue<BigNumberish>,
+      signerAddress: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    MAX_PUBLIC_KEY_LENGTH(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    MAX_REVOKED_SIGNATURES(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    batchRevokeSignatures(
-      lockId: PromiseOrValue<BigNumberish>,
-      signatures: PromiseOrValue<string>[],
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+    MAX_REVOKED_CREDENTIALS(
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     emergencyTransferLockOwnership(
       lockId: PromiseOrValue<BigNumberish>,
       newOwner: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     getLockInfo(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getLockOwner(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
-    ): Promise<PopulatedTransaction>;
-
-    getPublicKey(
-      lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getRevokedSignatureCount(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getRevokedSignatures(
+      lockId: PromiseOrValue<BigNumberish>,
+      vcHashes: PromiseOrValue<BytesLike>[],
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getSignerAddress(
+      lockId: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getTotalLocks(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    isSignatureRevoked(
+    isCredentialRevoked(
       lockId: PromiseOrValue<BigNumberish>,
-      signature: PromiseOrValue<string>,
-      overrides?: CallOverrides,
+      vcHash: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     lockExistsView(
       lockId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     locks(
       arg0: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    pause(overrides?: Overrides & { from?: PromiseOrValue<string> }): Promise<PopulatedTransaction>;
+    pause(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
 
     paused(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     registerLock(
-      publicKey: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      signerAddress: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     renounceOwnership(
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    revokeSignature(
+    revokeCredential(
       lockId: PromiseOrValue<BigNumberish>,
-      signature: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      vcHash: PromiseOrValue<BytesLike>,
+      authSignature: PromiseOrValue<BytesLike>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    revokedSignatures(
+    revokedCredentials(
       arg0: PromiseOrValue<BigNumberish>,
       arg1: PromiseOrValue<BytesLike>,
-      overrides?: CallOverrides,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     transferLockOwnership(
       lockId: PromiseOrValue<BigNumberish>,
+      message: PromiseOrValue<BytesLike>,
+      authSignature: PromiseOrValue<BytesLike>,
       newOwner: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     transferOwnership(
       newOwner: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     unpause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> },
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    verifySignerAddress(
+      lockId: PromiseOrValue<BigNumberish>,
+      signerAddress: PromiseOrValue<string>,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
 }

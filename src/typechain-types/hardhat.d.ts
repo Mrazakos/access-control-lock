@@ -2,59 +2,59 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
 import {
   FactoryOptions,
   HardhatEthersHelpers as HardhatEthersHelpersBase,
-} from '@nomiclabs/hardhat-ethers/types';
+} from "@nomiclabs/hardhat-ethers/types";
 
-import * as Contracts from '.';
+import * as Contracts from ".";
 
-declare module 'hardhat/types/runtime' {
+declare module "hardhat/types/runtime" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
     getContractFactory(
-      name: 'Ownable',
-      signerOrOptions?: ethers.Signer | FactoryOptions,
+      name: "Ownable",
+      signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Ownable__factory>;
     getContractFactory(
-      name: 'Pausable',
-      signerOrOptions?: ethers.Signer | FactoryOptions,
+      name: "Pausable",
+      signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Pausable__factory>;
     getContractFactory(
-      name: 'AccessControl',
-      signerOrOptions?: ethers.Signer | FactoryOptions,
+      name: "AccessControl",
+      signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.AccessControl__factory>;
 
     getContractAt(
-      name: 'Ownable',
+      name: "Ownable",
       address: string,
-      signer?: ethers.Signer,
+      signer?: ethers.Signer
     ): Promise<Contracts.Ownable>;
     getContractAt(
-      name: 'Pausable',
+      name: "Pausable",
       address: string,
-      signer?: ethers.Signer,
+      signer?: ethers.Signer
     ): Promise<Contracts.Pausable>;
     getContractAt(
-      name: 'AccessControl',
+      name: "AccessControl",
       address: string,
-      signer?: ethers.Signer,
+      signer?: ethers.Signer
     ): Promise<Contracts.AccessControl>;
 
     // default types
     getContractFactory(
       name: string,
-      signerOrOptions?: ethers.Signer | FactoryOptions,
+      signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<ethers.ContractFactory>;
     getContractFactory(
       abi: any[],
       bytecode: ethers.utils.BytesLike,
-      signer?: ethers.Signer,
+      signer?: ethers.Signer
     ): Promise<ethers.ContractFactory>;
     getContractAt(
       nameOrAbi: string | any[],
       address: string,
-      signer?: ethers.Signer,
+      signer?: ethers.Signer
     ): Promise<ethers.Contract>;
   }
 }

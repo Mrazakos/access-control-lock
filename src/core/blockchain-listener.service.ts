@@ -8,7 +8,7 @@ import { SyncStateRepository } from '@infra/database';
  * Events emitted by the blockchain listener
  */
 export const BLOCKCHAIN_EVENTS = {
-  SIGNATURE_REVOKED: 'signature.revoked',
+  CREDENTIAL_REVOKED: 'credential.revoked',
   BATCH_SYNC_COMPLETE: 'batch.sync.complete',
   LOCK_INFO_LOADED: 'lock.info.loaded',
   NEW_BLOCK: 'blockchain.newBlock',
@@ -26,27 +26,19 @@ interface NetworkConfig {
 }
 
 /**
- * Lock information from blockchain
- */
-export interface LockInfo {
-  lockId: string;
-  owner: string;
-  publicKey: string;
-  revokedCount: number;
-  exists: boolean;
-}
-
-/**
  * Revocation event data
  */
 export interface RevocationEventData {
-  signatureHash: string;
+  vcHash: string;
   revokedBy: string;
   transactionHash: string;
   blockNumber: number;
   logIndex: number;
   timestamp: Date;
   source: 'real-time' | 'batch';
+  network: string;
+  contractAddress: string;
+  lockId: string;
 }
 
 /**
@@ -79,7 +71,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
 
   // Lock-specific data
   private lockId: string;
-  private lockInfo: LockInfo | null = null;
 
   // Hybrid sync state
   private isListening = false;
@@ -104,10 +95,11 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
   ) {}
 
   async onModuleInit() {
-    if (process.env.MODE === 'API' || process.env.MODE === 'IOT' || process.env.MODE === 'NFC') {
-      await this.initialize();
-      await this.startHybridSync();
-    }
+    // Don't auto-initialize - wait for config API call
+    // if (process.env.MODE === 'API' || process.env.MODE === 'IOT' || process.env.MODE === 'NFC') {
+    //   await this.initialize();
+    //   await this.startHybridSync();
+    // }
   }
 
   async onModuleDestroy() {
@@ -139,15 +131,13 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
   }
 
   /**
-   * Initialize blockchain connection and fetch lock information
+   * Initialize blockchain connection for a specific lock
+   * Called by ConfigController after lock is configured
    */
-  private async initialize() {
+  async initialize(lockId: number): Promise<void> {
     try {
-      // Get lock ID from environment
-      this.lockId = process.env.LOCK_ID;
-      if (!this.lockId) {
-        throw new Error('LOCK_ID environment variable is required');
-      }
+      // Set lock ID from parameter
+      this.lockId = lockId.toString();
 
       this.networkConfig = this.getNetworkConfig();
 
@@ -186,17 +176,20 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
         this.lockId,
       );
       this.lastSyncedBlock = Math.max(
-        persisted.lastSyncedBlock,
+        persisted.lastSyncedBlock || 0,
         this.networkConfig.startBlock,
       );
-
-      // Fetch lock information from blockchain
-      await this.fetchLockInfo();
 
       this.logger.log(`🔒 Monitoring Lock ID: ${this.lockId}`);
       this.logger.log(`📍 Current block: ${this.currentBlock}`);
       this.logger.log(`📍 Starting from block: ${this.lastSyncedBlock}`);
       this.logger.log(`🌐 Using ${this.networkConfig.name} network`);
+
+      // Emit event so other services can access the lock info
+      this.eventEmitter.emit(BLOCKCHAIN_EVENTS.LOCK_INFO_LOADED, this.lockId);
+
+      // Start hybrid sync after initialization
+      await this.startHybridSync();
 
       this.logger.log('✅ Blockchain listener initialized');
     } catch (error) {
@@ -207,54 +200,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
       this.eventEmitter.emit(BLOCKCHAIN_EVENTS.ERROR, error);
       throw error;
     }
-  }
-
-  /**
-   * Fetch lock information from the blockchain
-   */
-  private async fetchLockInfo(): Promise<void> {
-    try {
-      this.logger.log(`Fetching lock info for Lock ID: ${this.lockId}...`);
-
-      const info = await this.contract.getLockInfo(this.lockId);
-
-      this.lockInfo = {
-        lockId: this.lockId,
-        owner: info.owner,
-        publicKey: info.publicKey,
-        revokedCount: info.revokedCount.toNumber(),
-        exists: info.exists,
-      };
-
-      if (!this.lockInfo.exists) {
-        throw new Error(`Lock ID ${this.lockId} does not exist on the blockchain`);
-      }
-
-      this.logger.log(`✅ Lock info loaded:`);
-      this.logger.log(`   Owner: ${this.lockInfo.owner}`);
-      this.logger.log(`   Public Key: ${this.lockInfo.publicKey.substring(0, 20)}...`);
-      this.logger.log(`   Revoked Count: ${this.lockInfo.revokedCount}`);
-
-      // Emit event so other services can access the public key
-      this.eventEmitter.emit(BLOCKCHAIN_EVENTS.LOCK_INFO_LOADED, this.lockInfo);
-    } catch (error) {
-      this.logger.error(`Failed to fetch lock info: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-
-  /**
-   * Get the lock's public key (for signature verification)
-   */
-  getPublicKey(): string | null {
-    return this.lockInfo?.publicKey || null;
-  }
-
-  /**
-   * Get complete lock information
-   */
-  getLockInfo(): LockInfo | null {
-    return this.lockInfo;
   }
 
   /**
@@ -271,8 +216,8 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
       return;
     }
 
-    if (!this.lockInfo) {
-      this.logger.error('Lock info not loaded. Cannot start hybrid sync.');
+    if (!this.lockId) {
+      this.logger.error('Lock ID not loaded. Cannot start hybrid sync.');
       return;
     }
 
@@ -332,19 +277,19 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
     // Remove any existing listeners first to prevent duplicates
     this.stopRealtimeListening();
 
-    // Create filter for this lock's SignatureRevoked events
-    const filter = this.contract.filters.SignatureRevoked(this.lockId, null, null);
+    // Create filter for this lock's CredentialRevoked events
+    const filter = this.contract.filters.CredentialRevoked(this.lockId, null, null);
 
-    // Listen to SignatureRevoked events (only for this lock)
+    // Listen to CredentialRevoked events (only for this lock)
     // TypeChain event listeners receive event args first, then the event object as last parameter
     this.contract.on(filter, async (...args: any[]) => {
       try {
-        // Parse arguments: [lockId, signatureHash, owner, event]
+        // Parse arguments: [lockId, vcHash, owner, event]
         const event = args[args.length - 1]; // Last argument is the event object
-        const signatureHash = args[1] as string;
+        const vcHash = args[1] as string;
         const owner = args[2] as string;
 
-        const eventKey = signatureHash; // Since we only monitor one lock, hash is unique
+        const eventKey = vcHash; // Since we only monitor one lock, hash is unique
 
         // Atomic check-and-set to prevent duplicate processing
         // This must be the FIRST thing we do before any async operations
@@ -359,18 +304,21 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
         this.processingEvents.add(eventKey);
         this.pendingUpdates.add(eventKey);
 
-        this.logger.log(`🔴 Real-time event detected: SignatureRevoked`);
-        this.logger.log(`   Signature: ${signatureHash.substring(0, 10)}...`);
+        this.logger.log(`🔴 Real-time event detected: CredentialRevoked`);
+        this.logger.log(`   VC Hash: ${vcHash.substring(0, 10)}...`);
         this.logger.log(`   Block: ${event.blockNumber}`);
 
         const revocationData: RevocationEventData = {
-          signatureHash,
+          vcHash,
           revokedBy: owner,
           transactionHash: event.transactionHash,
           blockNumber: event.blockNumber,
           logIndex: event.logIndex,
           timestamp: new Date(),
           source: 'real-time',
+          network: this.networkConfig.name,
+          contractAddress: this.networkConfig.contractAddress,
+          lockId: this.lockId,
         };
 
         // Update statistics
@@ -378,15 +326,10 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
         this.stats.totalRevocations++;
         this.stats.lastRealTimeUpdate = new Date().toISOString();
 
-        // Update local lock info revoked count
-        if (this.lockInfo) {
-          this.lockInfo.revokedCount++;
-        }
-
         // Emit event for processing
-        this.eventEmitter.emit(BLOCKCHAIN_EVENTS.SIGNATURE_REVOKED, revocationData);
+        this.eventEmitter.emit(BLOCKCHAIN_EVENTS.CREDENTIAL_REVOKED, revocationData);
 
-        this.logger.log(`✅ Real-time revocation processed: ${signatureHash.substring(0, 10)}...`);
+        this.logger.log(`✅ Real-time revocation processed: ${vcHash.substring(0, 10)}...`);
 
         // Remove from processing set after a short delay to ensure DB operation completes
         setTimeout(() => {
@@ -394,7 +337,7 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
         }, 5000); // Increased to 5 seconds to ensure DB operations complete
       } catch (error) {
         this.logger.error(
-          `❌ Error handling real-time SignatureRevoked event: ${error.message}`,
+          `❌ Error handling real-time CredentialRevoked event: ${error.message}`,
           error.stack,
         );
         this.eventEmitter.emit(BLOCKCHAIN_EVENTS.ERROR, error);
@@ -409,7 +352,7 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
    */
   private stopRealtimeListening() {
     if (this.contract) {
-      this.contract.removeAllListeners('SignatureRevoked');
+      this.contract.removeAllListeners('CredentialRevoked');
       this.logger.log('Stopped real-time event listening');
     }
   }
@@ -464,7 +407,7 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
           );
 
           // Query only events for this specific lock
-          const filter = this.contract.filters.SignatureRevoked(this.lockId, null, null);
+          const filter = this.contract.filters.CredentialRevoked(this.lockId, null, null);
           let events = [];
           try {
             events = await this.contract.queryFilter(filter, innerFrom, innerTo);
@@ -479,8 +422,8 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
           this.logger.log(`   ▶️ Found ${events.length} events in chunk`);
 
           for (const event of events) {
-            const signatureHash = event.args.signatureHash;
-            const eventKey = signatureHash;
+            const vcHash = event.args.vcHash;
+            const eventKey = vcHash;
 
             // Skip if we already processed this via real-time events
             if (this.pendingUpdates.has(eventKey)) {
@@ -491,21 +434,24 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
             }
 
             this.logger.log(
-              `   🆕 New revocation: ${signatureHash.substring(0, 10)}... at block ${event.blockNumber}`,
+              `   🆕 New revocation: ${vcHash.substring(0, 10)}... at block ${event.blockNumber}`,
             );
 
             const revocationData: RevocationEventData = {
-              signatureHash,
+              vcHash,
               revokedBy: event.args.owner,
               transactionHash: event.transactionHash,
               blockNumber: event.blockNumber,
               logIndex: event.logIndex,
               timestamp: new Date(),
               source: 'batch',
+              network: this.networkConfig.name,
+              contractAddress: this.networkConfig.contractAddress,
+              lockId: this.lockId,
             };
 
             // Emit event for processing
-            this.eventEmitter.emit(BLOCKCHAIN_EVENTS.SIGNATURE_REVOKED, revocationData);
+            this.eventEmitter.emit(BLOCKCHAIN_EVENTS.CREDENTIAL_REVOKED, revocationData);
 
             totalEvents++;
             newRevocations++;
@@ -524,11 +470,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
       this.stats.batchUpdates += totalEvents;
       this.stats.totalRevocations += totalEvents;
       this.stats.lastBatchSync = new Date().toISOString();
-
-      // Update local lock info
-      if (this.lockInfo && totalEvents > 0) {
-        this.lockInfo.revokedCount += totalEvents;
-      }
 
       // Clear pending updates after successful batch sync
       this.pendingUpdates.clear();
@@ -590,6 +531,13 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
   }
 
   /**
+   * Public method to stop the listener (called from config reset)
+   */
+  async stop() {
+    await this.stopHybridSync();
+  }
+
+  /**
    * Manual force sync (useful for testing or recovery)
    */
   async forceFullSync() {
@@ -601,9 +549,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
     // Reset sync position
     this.lastSyncedBlock = this.networkConfig.startBlock;
     this.pendingUpdates.clear();
-
-    // Refetch lock info to get updated revoked count
-    await this.fetchLockInfo();
 
     // Perform full sync
     await this.performBatchSync();
@@ -642,8 +587,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
       return {
         healthy: blocksBehind < 100, // Consider healthy if less than 100 blocks behind
         lockId: this.lockId,
-        lockOwner: this.lockInfo?.owner || 'unknown',
-        publicKey: this.lockInfo?.publicKey || 'unknown',
         currentBlock,
         lastSyncedBlock: this.lastSyncedBlock,
         blocksBehind,
@@ -651,7 +594,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
         batchSyncActive: !!this.batchSyncInterval,
         network: this.networkConfig.name,
         contractAddress: this.networkConfig.contractAddress,
-        revokedCount: this.lockInfo?.revokedCount || 0,
       };
     } catch (error) {
       return {
@@ -665,35 +607,11 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
   }
 
   /**
-   * Check if a signature is revoked on-chain (direct contract call)
-   */
-  async isSignatureRevokedOnChain(signature: string): Promise<boolean> {
-    if (!this.contract) {
-      throw new Error('Contract not initialized');
-    }
-
-    try {
-      return await this.contract.isSignatureRevoked(this.lockId, signature);
-    } catch (error) {
-      this.logger.error(
-        `Error checking signature revocation on-chain: ${error.message}`,
-        error.stack,
-      );
-      throw error;
-    }
-  }
-
-  /**
    * Get listener status
    */
   getStatus() {
     return {
       lockId: this.lockId,
-      lockOwner: this.lockInfo?.owner || 'unknown',
-      publicKey: this.lockInfo?.publicKey
-        ? `${this.lockInfo.publicKey.substring(0, 20)}...`
-        : 'unknown',
-      revokedCount: this.lockInfo?.revokedCount || 0,
       isListening: this.isListening,
       currentBlock: this.currentBlock,
       lastSyncedBlock: this.lastSyncedBlock,

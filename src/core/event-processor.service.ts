@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { BLOCKCHAIN_EVENTS, RevocationEventData } from '@core/blockchain-listener.service';
 import {
-  RevokedSignatureRepository,
+  RevokedCredentialRepository,
   SignatureEntryRepository,
   SyncStateRepository,
 } from '@infra/database';
@@ -17,24 +17,24 @@ export class EventProcessorService {
   private readonly logger = new Logger(EventProcessorService.name);
 
   constructor(
-    private readonly revokedSignatureRepository: RevokedSignatureRepository,
+    private readonly revokedCredentialRepository: RevokedCredentialRepository,
     private readonly signatureEntryRepository: SignatureEntryRepository,
     private readonly syncStateRepository: SyncStateRepository,
   ) {}
 
   /**
-   * Handle SignatureRevoked event (both real-time and batch)
+   * Handle CredentialRevoked event (both real-time and batch)
    * For single-lock monitoring - no lockId needed in database
    */
-  @OnEvent(BLOCKCHAIN_EVENTS.SIGNATURE_REVOKED)
-  async handleSignatureRevoked(data: RevocationEventData) {
+  @OnEvent(BLOCKCHAIN_EVENTS.CREDENTIAL_REVOKED)
+  async handleCredentialRevoked(data: RevocationEventData) {
     try {
-      const { signatureHash, blockNumber, timestamp, source, revokedBy, transactionHash } = data;
+      const { vcHash, blockNumber, timestamp, source, revokedBy, transactionHash } = data;
 
       this.logger.log(`\n${'='.repeat(80)}`);
       this.logger.log(`🔔 REVOCATION EVENT RECEIVED [${source.toUpperCase()}]`);
       this.logger.log(`${'='.repeat(80)}`);
-      this.logger.log(`📋 Signature Hash:    ${signatureHash}`);
+      this.logger.log(`📋 VC Hash:           ${vcHash}`);
       this.logger.log(`👤 Revoked By:        ${revokedBy}`);
       this.logger.log(`🧱 Block Number:      ${blockNumber}`);
       this.logger.log(`🔗 Transaction Hash:  ${transactionHash}`);
@@ -42,11 +42,11 @@ export class EventProcessorService {
       this.logger.log(`${'='.repeat(80)}\n`);
 
       // Check if already cached to avoid duplicates
-      const exists = await this.revokedSignatureRepository.isSignatureHashRevoked(signatureHash);
+      const exists = await this.revokedCredentialRepository.isVcHashRevoked(vcHash);
 
       if (exists) {
         this.logger.warn(
-          `⚠️  Signature ${signatureHash.substring(0, 10)}... ALREADY IN DATABASE (skipping duplicate)`,
+          `⚠️  Credential ${vcHash.substring(0, 10)}... ALREADY IN DATABASE (skipping duplicate)`,
         );
         return;
       }
@@ -54,9 +54,9 @@ export class EventProcessorService {
       // Save revocation to database (no lockId - single lock instance)
       let savedSuccessfully = false;
       try {
-        await this.revokedSignatureRepository.save({
-          id: signatureHash, // Use hash as primary key since we only monitor one lock
-          signatureHash,
+        await this.revokedCredentialRepository.save({
+          id: vcHash, // Use hash as primary key since we only monitor one lock
+          vcHash,
           blockNumber,
           revokedAt: timestamp,
         });
@@ -65,7 +65,7 @@ export class EventProcessorService {
         // Handle unique constraint violations gracefully (race condition between check and insert)
         if (saveError.message && saveError.message.includes('UNIQUE constraint failed')) {
           this.logger.warn(
-            `⚠️  Signature ${signatureHash.substring(0, 10)}... ALREADY EXISTS (race condition detected, skipping)`,
+            `⚠️  Credential ${vcHash.substring(0, 10)}... ALREADY EXISTS (race condition detected, skipping)`,
           );
           // Don't log success or query database - just return early
           return;
@@ -77,24 +77,24 @@ export class EventProcessorService {
       // Only log if we actually saved successfully
       if (savedSuccessfully) {
         // Get current database stats
-        const totalRevoked = await this.revokedSignatureRepository.countAll();
+        const totalRevoked = await this.revokedCredentialRepository.countAll();
 
         this.logger.log(`✅ SAVED TO DATABASE!`);
         this.logger.log(`📊 Total revocations in DB: ${totalRevoked}`);
         this.logger.log(`🔹 Source: ${source}\n`);
 
-        // Log all revoked signatures currently in database
+        // Log all revoked credentials currently in database
         this.logger.log(`\n${'─'.repeat(80)}`);
-        this.logger.log(`📋 ALL REVOKED SIGNATURES IN DATABASE:`);
+        this.logger.log(`📋 ALL REVOKED CREDENTIALS IN DATABASE:`);
         this.logger.log(`${'─'.repeat(80)}`);
 
-        const allRevoked = await this.revokedSignatureRepository.getAllRevocations();
+        const allRevoked = await this.revokedCredentialRepository.getAllRevocations();
 
         if (allRevoked.length === 0) {
-          this.logger.log(`   (No revoked signatures in database)`);
+          this.logger.log(`   (No revoked credentials in database)`);
         } else {
           allRevoked.forEach((revoked, index) => {
-            this.logger.log(`   ${index + 1}. Hash: ${revoked.signatureHash}`);
+            this.logger.log(`   ${index + 1}. Hash: ${revoked.vcHash}`);
             this.logger.log(`      Block: ${revoked.blockNumber}`);
             this.logger.log(`      Revoked At: ${revoked.revokedAt.toISOString()}`);
             this.logger.log(`      Created At: ${revoked.createdAt.toISOString()}`);
@@ -106,7 +106,7 @@ export class EventProcessorService {
       }
     } catch (error) {
       this.logger.error(
-        `❌ Failed to process SignatureRevoked event: ${error.message}`,
+        `❌ Failed to process CredentialRevoked event: ${error.message}`,
         error.stack,
       );
     }
@@ -129,7 +129,7 @@ export class EventProcessorService {
       this.logger.log(`✨ New revocations:    ${newRevocations || totalEvents}`);
 
       // Get current database stats
-      const totalRevoked = await this.revokedSignatureRepository.countAll();
+      const totalRevoked = await this.revokedCredentialRepository.countAll();
       const totalEntries = await this.signatureEntryRepository.countAll();
 
       // Persist the toBlock as lastSyncedBlock (batch sync already updated it in blockchain listener)
@@ -167,7 +167,7 @@ export class EventProcessorService {
     try {
       // Check if signature is revoked
       const signatureHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(signature));
-      const isRevoked = await this.revokedSignatureRepository.isSignatureHashRevoked(signatureHash);
+      const isRevoked = await this.revokedCredentialRepository.isVcHashRevoked(signatureHash);
 
       // Create signature entry with audit trail
       await this.signatureEntryRepository.save({
@@ -188,7 +188,7 @@ export class EventProcessorService {
    */
   async getRevocationStats() {
     try {
-      const revokedCount = await this.revokedSignatureRepository.countAll();
+      const revokedCount = await this.revokedCredentialRepository.countAll();
       const entriesCount = await this.signatureEntryRepository.countAll();
 
       return {
