@@ -95,7 +95,7 @@ export class ConfigController {
       await this.lockConfigService.reset();
 
       // Stop blockchain listener
-      this.blockchainListener.stop();
+      await this.blockchainListener.stop();
 
       this.logger.log(`✅ Lock configuration reset successfully!`);
       this.logger.log(`${'='.repeat(80)}\n`);
