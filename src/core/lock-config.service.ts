@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { LockConfigRepository } from '@infra/database';
+import { BlockchainListenerService } from './blockchain-listener.service';
 
 /**
  * Service to manage lock configuration (Lock ID and Public Key)
@@ -13,7 +14,10 @@ export class LockConfigService implements OnModuleInit {
   private publicKey: string | null = null;
   private isConfigured: boolean = false;
 
-  constructor(private readonly lockConfigRepository: LockConfigRepository) {}
+  constructor(
+    private readonly lockConfigRepository: LockConfigRepository,
+    private readonly blockChainListener: BlockchainListenerService,
+  ) {}
 
   /**
    * Load configuration from database on module initialization
@@ -28,6 +32,7 @@ export class LockConfigService implements OnModuleInit {
         this.logger.log(`✅ Lock configuration loaded from database`);
         this.logger.log(`   Lock ID: ${this.lockId}`);
         this.logger.log(`   Public Key: ${this.publicKey.substring(0, 20)}...`);
+        this.blockChainListener.initialize(this.lockId);
       } else {
         this.logger.warn(`⚠️  No lock configuration found. Please call POST /api/v1/config/init`);
       }

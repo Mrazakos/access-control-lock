@@ -22,24 +22,16 @@ export class HealthController {
   @Get()
   async check() {
     try {
-      const lockInfo = this.blockchainListener.getLockInfo();
       const syncStats = this.blockchainListener.getStats();
       const listenerStatus = this.blockchainListener.getStatus();
 
-      const isHealthy =
-        lockInfo?.exists && listenerStatus.isListening && syncStats.blocksBehind < 100;
+      const isHealthy = listenerStatus.isListening && syncStats.blocksBehind < 100;
 
       return {
         status: isHealthy ? 'healthy' : 'degraded',
         timestamp: new Date().toISOString(),
         mode: process.env.MODE || 'API',
-        lock: {
-          lockId: lockInfo?.lockId || process.env.LOCK_ID,
-          owner: lockInfo?.owner || 'unknown',
-          publicKey: lockInfo?.publicKey ? `${lockInfo.publicKey.substring(0, 20)}...` : 'unknown',
-          revokedCount: lockInfo?.revokedCount || 0,
-          exists: lockInfo?.exists || false,
-        },
+
         blockchain: {
           network: listenerStatus.network,
           currentBlock: syncStats.currentBlock,

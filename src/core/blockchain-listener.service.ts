@@ -3,7 +3,6 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ethers } from 'ethers';
 import { AccessControl, AccessControl__factory } from '../typechain-types';
 import { SyncStateRepository } from '@infra/database';
-import { LockConfigService } from './lock-config.service';
 
 /**
  * Events emitted by the blockchain listener
@@ -24,17 +23,6 @@ interface NetworkConfig {
   rpcUrl: string;
   contractAddress: string;
   startBlock: number;
-}
-
-/**
- * Lock information from blockchain
- */
-export interface LockInfo {
-  lockId: string;
-  owner: string;
-  publicKey: string;
-  revokedCount: number;
-  exists: boolean;
 }
 
 /**
@@ -83,7 +71,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
 
   // Lock-specific data
   private lockId: string;
-  private lockInfo: LockInfo | null = null;
 
   // Hybrid sync state
   private isListening = false;
@@ -105,7 +92,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
   constructor(
     private eventEmitter: EventEmitter2,
     private syncStateRepo: SyncStateRepository,
-    private lockConfigService: LockConfigService,
   ) {}
 
   async onModuleInit() {
@@ -190,29 +176,17 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
         this.lockId,
       );
       this.lastSyncedBlock = Math.max(
-        persisted.lastSyncedBlock,
+        persisted.lastSyncedBlock || 0,
         this.networkConfig.startBlock,
       );
 
-      // Initialize lock info with configured data
-      // Public key is now configured via API instead of fetched from blockchain
-      const publicKey = this.lockConfigService.getPublicKey();
-      this.lockInfo = {
-        lockId: this.lockId,
-        owner: 'configured', // Not fetched from blockchain
-        publicKey: publicKey,
-        revokedCount: 0, // Will be updated during sync
-        exists: true,
-      };
-
       this.logger.log(`🔒 Monitoring Lock ID: ${this.lockId}`);
-      this.logger.log(`🔑 Public Key: ${publicKey.substring(0, 20)}...`);
       this.logger.log(`📍 Current block: ${this.currentBlock}`);
       this.logger.log(`📍 Starting from block: ${this.lastSyncedBlock}`);
       this.logger.log(`🌐 Using ${this.networkConfig.name} network`);
 
       // Emit event so other services can access the lock info
-      this.eventEmitter.emit(BLOCKCHAIN_EVENTS.LOCK_INFO_LOADED, this.lockInfo);
+      this.eventEmitter.emit(BLOCKCHAIN_EVENTS.LOCK_INFO_LOADED, this.lockId);
 
       // Start hybrid sync after initialization
       await this.startHybridSync();
@@ -229,54 +203,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
   }
 
   /**
-   * Fetch lock information from the blockchain
-   */
-  private async fetchLockInfo(): Promise<void> {
-    try {
-      this.logger.log(`Fetching lock info for Lock ID: ${this.lockId}...`);
-
-      const info = await this.contract.getLockInfo(this.lockId);
-
-      this.lockInfo = {
-        lockId: this.lockId,
-        owner: info.owner,
-        publicKey: info.signerAddress,
-        revokedCount: info.revokedCount.toNumber(),
-        exists: info.exists,
-      };
-
-      if (!this.lockInfo.exists) {
-        throw new Error(`Lock ID ${this.lockId} does not exist on the blockchain`);
-      }
-
-      this.logger.log(`✅ Lock info loaded:`);
-      this.logger.log(`   Owner: ${this.lockInfo.owner}`);
-      this.logger.log(`   Public Key: ${this.lockInfo.publicKey.substring(0, 20)}...`);
-      this.logger.log(`   Revoked Count: ${this.lockInfo.revokedCount}`);
-
-      // Emit event so other services can access the public key
-      this.eventEmitter.emit(BLOCKCHAIN_EVENTS.LOCK_INFO_LOADED, this.lockInfo);
-    } catch (error) {
-      this.logger.error(`Failed to fetch lock info: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-
-  /**
-   * Get the lock's public key (for signature verification)
-   */
-  getPublicKey(): string | null {
-    return this.lockInfo?.publicKey || null;
-  }
-
-  /**
-   * Get complete lock information
-   */
-  getLockInfo(): LockInfo | null {
-    return this.lockInfo;
-  }
-
-  /**
    * Start the hybrid sync system (batch + real-time)
    */
   async startHybridSync() {
@@ -290,8 +216,8 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
       return;
     }
 
-    if (!this.lockInfo) {
-      this.logger.error('Lock info not loaded. Cannot start hybrid sync.');
+    if (!this.lockId) {
+      this.logger.error('Lock ID not loaded. Cannot start hybrid sync.');
       return;
     }
 
@@ -400,11 +326,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
         this.stats.totalRevocations++;
         this.stats.lastRealTimeUpdate = new Date().toISOString();
 
-        // Update local lock info revoked count
-        if (this.lockInfo) {
-          this.lockInfo.revokedCount++;
-        }
-
         // Emit event for processing
         this.eventEmitter.emit(BLOCKCHAIN_EVENTS.CREDENTIAL_REVOKED, revocationData);
 
@@ -416,7 +337,7 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
         }, 5000); // Increased to 5 seconds to ensure DB operations complete
       } catch (error) {
         this.logger.error(
-          `❌ Error handling real-time SignatureRevoked event: ${error.message}`,
+          `❌ Error handling real-time CredentialRevoked event: ${error.message}`,
           error.stack,
         );
         this.eventEmitter.emit(BLOCKCHAIN_EVENTS.ERROR, error);
@@ -431,7 +352,7 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
    */
   private stopRealtimeListening() {
     if (this.contract) {
-      this.contract.removeAllListeners('SignatureRevoked');
+      this.contract.removeAllListeners('CredentialRevoked');
       this.logger.log('Stopped real-time event listening');
     }
   }
@@ -550,11 +471,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
       this.stats.totalRevocations += totalEvents;
       this.stats.lastBatchSync = new Date().toISOString();
 
-      // Update local lock info
-      if (this.lockInfo && totalEvents > 0) {
-        this.lockInfo.revokedCount += totalEvents;
-      }
-
       // Clear pending updates after successful batch sync
       this.pendingUpdates.clear();
 
@@ -634,9 +550,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
     this.lastSyncedBlock = this.networkConfig.startBlock;
     this.pendingUpdates.clear();
 
-    // Refetch lock info to get updated revoked count
-    await this.fetchLockInfo();
-
     // Perform full sync
     await this.performBatchSync();
 
@@ -674,8 +587,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
       return {
         healthy: blocksBehind < 100, // Consider healthy if less than 100 blocks behind
         lockId: this.lockId,
-        lockOwner: this.lockInfo?.owner || 'unknown',
-        publicKey: this.lockInfo?.publicKey || 'unknown',
         currentBlock,
         lastSyncedBlock: this.lastSyncedBlock,
         blocksBehind,
@@ -683,7 +594,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
         batchSyncActive: !!this.batchSyncInterval,
         network: this.networkConfig.name,
         contractAddress: this.networkConfig.contractAddress,
-        revokedCount: this.lockInfo?.revokedCount || 0,
       };
     } catch (error) {
       return {
@@ -702,11 +612,6 @@ export class BlockchainListenerService implements OnModuleInit, OnModuleDestroy 
   getStatus() {
     return {
       lockId: this.lockId,
-      lockOwner: this.lockInfo?.owner || 'unknown',
-      publicKey: this.lockInfo?.publicKey
-        ? `${this.lockInfo.publicKey.substring(0, 20)}...`
-        : 'unknown',
-      revokedCount: this.lockInfo?.revokedCount || 0,
       isListening: this.isListening,
       currentBlock: this.currentBlock,
       lastSyncedBlock: this.lastSyncedBlock,
