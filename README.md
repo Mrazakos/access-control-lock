@@ -927,21 +927,21 @@ spec:
   selector:
     matchLabels:
       app: access-control-lock
-      lock-id: "1"
+      lock-id: '1'
   template:
     metadata:
       labels:
         app: access-control-lock
-        lock-id: "1"
+        lock-id: '1'
     spec:
       containers:
         - name: lock-service
           image: access-control-lock:latest
           env:
             - name: LOCK_ID
-              value: "1"
+              value: '1'
             - name: NETWORK
-              value: "sepolia"
+              value: 'sepolia'
             - name: SEPOLIA_RPC_URL
               valueFrom:
                 secretKeyRef:
@@ -1120,19 +1120,19 @@ const cardData = await nfcReader.read();
 const { message, signature } = parseNFCData(cardData);
 
 // Verify with local service
-const result = await fetch("http://localhost:3000/api/v1/verify", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ message, signature, lockId: "1" }),
+const result = await fetch('http://localhost:3000/api/v1/verify', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ message, signature, lockId: '1' }),
 });
 
 const { verified } = await result.json();
 
 if (verified) {
   unlockDoor();
-  console.log("Access granted!");
+  console.log('Access granted!');
 } else {
-  console.log("Access denied!");
+  console.log('Access denied!');
 }
 ```
 
@@ -1140,17 +1140,17 @@ if (verified) {
 
 ```typescript
 // Mobile app sends verification request
-app.post("/api/unlock", async (req, res) => {
+app.post('/api/unlock', async (req, res) => {
   const { userId, signature } = req.body;
 
   // Verify signature with VCEL service
-  const vcelResult = await fetch("http://lock-service:3000/api/v1/verify", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const vcelResult = await fetch('http://lock-service:3000/api/v1/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       message: `unlock_${userId}_${Date.now()}`,
       signature,
-      lockId: "1",
+      lockId: '1',
     }),
   });
 
@@ -1158,10 +1158,10 @@ app.post("/api/unlock", async (req, res) => {
 
   if (verified) {
     // Send unlock command to physical lock via IoT
-    await mqttClient.publish("locks/1/commands/unlock", "1");
-    res.json({ success: true, message: "Door unlocked" });
+    await mqttClient.publish('locks/1/commands/unlock', '1');
+    res.json({ success: true, message: 'Door unlocked' });
   } else {
-    res.status(403).json({ success: false, message: "Invalid credential" });
+    res.status(403).json({ success: false, message: 'Invalid credential' });
   }
 });
 ```
