@@ -3,6 +3,7 @@ import { LockConfigService } from '@core/lock-config.service';
 import { BlockchainListenerService } from '@core/blockchain-listener.service';
 import { RequireAccessLevel } from '../decorators/require-access-level.decorator';
 import { ConfigGuard } from '../guards/config.guard';
+import { VcAuthGuard } from '../guards/vc-auth.guard';
 
 /**
  * Controller for lock configuration management
@@ -24,8 +25,6 @@ export class ConfigController {
    */
   @Post('init')
   @UseGuards(ConfigGuard)
-  @RequireAccessLevel('admin')
-  // TODO: Consider adding VcAuthGuard here for extra security
   async initializeLock(@Body() body: { lockId: number; publicKey: string }) {
     try {
       this.logger.log(`\n${'='.repeat(80)}`);
@@ -81,10 +80,10 @@ export class ConfigController {
    * Request body should contain a VerifiableCredential with:
    * - credentialSubject.accessLevel: "admin"
    *   OR
-   * - credentialSubject.permissions: ["reset"]
+   * - credentialSubject.permissions: ["admin"]
    */
   @Post('reset')
-  // @UseGuards(VcAuthGuard)
+  @UseGuards(VcAuthGuard)
   @RequireAccessLevel('admin')
   async resetConfig() {
     try {
